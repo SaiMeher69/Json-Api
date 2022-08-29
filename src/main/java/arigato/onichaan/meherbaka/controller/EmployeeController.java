@@ -27,17 +27,28 @@ public class EmployeeController {
     }
 
     //add an employee by taking in json object as input
-    @PostMapping(value = "/add")
-    public int addEmployee(@RequestBody Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
-        return employeeService.createEmployee(employee);
+    @PutMapping(value = "/add")
+    public List<Integer> addEmployee(@RequestBody Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
+        //System.out.println(employee);
+        return employeeService.addEmployee(employee);
     }
 
+    @GetMapping(value = "/find/{name}")
+    public List<Employee> findEmployeeByName(@PathVariable String name) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+        return employeeService.findEmployeeByName(name);
+    }
 
     //delete an employee from the database by id
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteEmployee(@PathVariable int id) throws SQLException, IOException, ClassNotFoundException {
         employeeService.deleteEmployee(id);
         return new ResponseEntity<>("deleted", HttpStatus.OK);
+    }
+
+    @DeleteMapping("/deleteAll")
+    public ResponseEntity<String> deleteAllEmployeesFromDB() throws SQLException, IOException, ClassNotFoundException {
+        employeeService.deleteAllEmployees();
+        return new ResponseEntity<>("deleted all the employees in the table and restarted identity", HttpStatus.OK);
     }
 
 

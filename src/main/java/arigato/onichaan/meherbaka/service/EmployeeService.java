@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,12 +23,30 @@ public class EmployeeService {
         return employeeRepository.findAll();
     }
 
-    public int createEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
-        return employeeRepository.addEmployee(employee);
+    public List<Employee> findEmployeeByName(String name) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+        return employeeRepository.findEmployeeByName(name);
+    }
+
+    public List<Integer> addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
+        List<Employee> employeesWithId = employeeRepository.findEmployeesById(employee.getId());
+        List<Integer> indexes = new ArrayList<>();
+        if(employee.getId() == 0){
+            indexes = employeeRepository.addEmployee(employee);
+        } else if (!employeesWithId.isEmpty()) {
+            employeeRepository.deleteEmployee(employee.getId());
+            indexes = employeeRepository.addEmployee(employee);
+        }else{
+            throw new SQLException("Enter a valid employee id");
+        }
+        return indexes;
     }
 
     public void deleteEmployee(int id) throws SQLException, IOException, ClassNotFoundException {
         employeeRepository.deleteEmployee(id);
+    }
+
+    public void deleteAllEmployees() throws SQLException, IOException, ClassNotFoundException {
+        employeeRepository.deleteAll();
     }
 
 

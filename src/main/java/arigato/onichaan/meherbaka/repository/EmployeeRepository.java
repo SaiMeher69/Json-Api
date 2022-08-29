@@ -1,10 +1,8 @@
 package arigato.onichaan.meherbaka.repository;
 
+import arigato.onichaan.meherbaka.annotations.AutoIncrement;
 import arigato.onichaan.meherbaka.annotations.NameToName;
 import arigato.onichaan.meherbaka.model.Employee;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Repository;
 
 import java.io.FileReader;
@@ -24,32 +22,6 @@ public class EmployeeRepository {
         properties.load(new FileReader("src/main/resources/application.properties"));
         Class.forName("org.postgresql.Driver");
         return DriverManager.getConnection(properties.getProperty("spring.datasource.url"), properties.getProperty("spring.datasource.username"), properties.getProperty("spring.datasource.password"));
-    }
-
-    //parse the json string to object
-    public Employee parseJson(String jsonString) throws IllegalAccessException, ParseException {
-        Employee employee = new Employee();
-        JSONParser parser = new JSONParser();
-        JSONObject jsonObject = (JSONObject) parser.parse(jsonString);
-        Class<?> clapp = Employee.class;
-        for (Field field : clapp.getDeclaredFields()) {
-            field.setAccessible(true);
-            Class<?> type = field.getType();
-            String fieldName;
-            if (field.isAnnotationPresent(NameToName.class)) {
-                fieldName = field.getAnnotation(NameToName.class).value();
-            } else {
-                fieldName = field.getName();
-            }
-            if (type.equals(int.class)) {
-                field.set(employee, (int) (long) jsonObject.get(fieldName));
-            } else if (type.equals(Double.class)) {
-                field.set(employee, (double) jsonObject.get(fieldName));
-            } else {
-                field.set(employee, jsonObject.get(fieldName));
-            }
-        }
-        return employee;
     }
 
     //Find all the employees in the database
@@ -94,9 +66,87 @@ public class EmployeeRepository {
         return employeeList;
     }
 
+    //find employeeById
+    public List<Employee> findEmployeesById(int id) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+        List<Employee> employeesWithId = new ArrayList<>();
+        String query = "Select * FROM employeetable WHERE id = " + id + ";";
+        Connection connection = createConnection();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query);
+        if (!resultSet.wasNull()) {
+            while (resultSet.next()) {
+                Employee employee = new Employee();
+                Class<?> clapp = Employee.class;
+                for (Field field : clapp.getDeclaredFields()) {
+                    field.setAccessible(true);
+                    String searchValue;
+                    if (field.isAnnotationPresent(NameToName.class)) {
+                        searchValue = field.getAnnotation(NameToName.class).value();
+                    } else {
+                        searchValue = field.getName();
+                    }
+                    Class<?> type = field.getType();
+                    if (type.equals(int.class)) {
+                        field.set(employee, resultSet.getInt(searchValue));
+                    } else if (type.equals(double.class)) {
+                        field.set(employee, resultSet.getDouble(searchValue));
+                    } else {
+                        field.set(employee, resultSet.getString(searchValue));
+                    }
+                }
+                employeesWithId.add(employee);
+                System.out.println(employee);
+            }
+
+        }
+        statement.close();
+        connection.close();
+        return employeesWithId;
+    }
+
+    //find employee By name
+    public List<Employee> findEmployeeByName(String fullName) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+        List<Employee> employeesWithName = new ArrayList<>();
+        String[] name = fullName.trim().split(" ");
+        String query = "Select * From employeetable where first_name = '" + name[0] + "' AND last_name = '" + name[1] + "';";
+        //System.out.println(query);
+        Connection connection = createConnection();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query);
+        if (!resultSet.wasNull()) {
+            while (resultSet.next()) {
+                Employee employee = new Employee();
+                Class<?> clapp = Employee.class;
+                for (Field field : clapp.getDeclaredFields()) {
+                    field.setAccessible(true);
+                    String searchValue;
+                    if (field.isAnnotationPresent(NameToName.class)) {
+                        searchValue = field.getAnnotation(NameToName.class).value();
+                    } else {
+                        searchValue = field.getName();
+                    }
+                    Class<?> type = field.getType();
+                    if (type.equals(int.class)) {
+                        field.set(employee, resultSet.getInt(searchValue));
+                    } else if (type.equals(double.class)) {
+                        field.set(employee, resultSet.getDouble(searchValue));
+                    } else {
+                        field.set(employee, resultSet.getString(searchValue));
+                    }
+                }
+                employeesWithName.add(employee);
+                //System.out.println(employee);
+            }
+
+        }
+        connection.close();
+        return employeesWithName;
+    }
+
     //Add a new employee into the database and get back the employee added
-    public int addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
+    public List<Integer> addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
         //add the employee using insert first
+        //INSERT INTO EMPLOYEES (first_name, ...) values (hgdv,sfh,gab);
         PreparedStatement preparedStatement;
         Connection connection = createConnection();
         Class<?> clap = Employee.class;
@@ -104,8 +154,10 @@ public class EmployeeRepository {
         query.append("INSERT INTO employeetable (");
         for (Field field : clap.getDeclaredFields()) {
             field.setAccessible(true);
-            if (field.getName().equals("id")) {
-                continue;
+            if (field.isAnnotationPresent(AutoIncrement.class)) {
+                if (employee.getId() == 0) {
+                    continue;
+                }
             }
             if (field.isAnnotationPresent(NameToName.class)) {
                 query.append(field.getAnnotation(NameToName.class).value()).append(",");
@@ -117,8 +169,10 @@ public class EmployeeRepository {
         query.append(") VALUES (");
         for (Field field : clap.getDeclaredFields()) {
             field.setAccessible(true);
-            if (field.getName().equals("id")) {
-                continue;
+            if (field.isAnnotationPresent(AutoIncrement.class)) {
+                if (employee.getId() == 0) {
+                    continue;
+                }
             }
             query.append("'").append(field.get(employee)).append("'").append(",");
         }
@@ -132,25 +186,39 @@ public class EmployeeRepository {
         //get the newly entered employee
         //select * from employeetable where first_name = employee.getFirstName();
         StringBuilder query1 = new StringBuilder().append("SELECT * FROM employeetable WHERE ");
-        for(Field field: clap.getDeclaredFields()){
+        for (Field field : clap.getDeclaredFields()) {
             field.setAccessible(true);
-            if(field.isAnnotationPresent(NameToName.class)){
-                query1.append(field.getAnnotation(NameToName.class).value()).append(" = ").append("'").append(field.get(employee)).append("'").append(" AND ");
+            if (!field.getName().equals("id")) {
+                if (field.isAnnotationPresent(NameToName.class)) {
+                    query1.append(field.getAnnotation(NameToName.class).value());
+                } else {
+                    query1.append(field.getName());
+                }
+                query1.append(" = ");
+                Class<?> type = field.getType();
+                if (type.equals(int.class) || type.equals(double.class) || type.equals(float.class)) {
+                    query1.append(field.get(employee)).append(" AND ");
+                } else {
+                    query1.append("'").append(field.get(employee)).append("' AND ");
+                }
             }
         }
-        query1.delete(query1.length()-5,query1.length()-1);
+        query1.delete(query1.length() - 5, query1.length() - 1);
         query1.append(";");
         //System.out.println(query1);
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(query1.toString());
-        resultSet.next();
+        List<Integer> intList = new ArrayList<>();
+        while (resultSet.next()) {
+            int id = resultSet.getInt("id");
+            intList.add(id);
+        }
 
-        int id = resultSet.getInt("id");
         //closing connections and statements
         statement.close();
         resultSet.close();
         connection.close();
-        return id;
+        return intList;
     }
 
     //delete employee
@@ -164,6 +232,15 @@ public class EmployeeRepository {
             preparedStatement.executeUpdate();
             preparedStatement.close();
         }
+    }
 
+    //truncate table and restart id
+    public void deleteAll() throws SQLException, IOException, ClassNotFoundException {
+        String query = "TRUNCATE employeetable RESTART IDENTITY";
+        Connection connection = createConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+        connection.close();
     }
 }

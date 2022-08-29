@@ -1,9 +1,11 @@
 package arigato.onichaan.meherbaka.model;
 
+import arigato.onichaan.meherbaka.annotations.AutoIncrement;
 import arigato.onichaan.meherbaka.annotations.NameToName;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Employee {
+    @AutoIncrement
     private int id;
     @NameToName(value = "first_name")
     @JsonProperty(value = "first_name")
