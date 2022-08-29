@@ -2,12 +2,10 @@ package arigato.onichaan.meherbaka.service;
 
 import arigato.onichaan.meherbaka.model.Employee;
 import arigato.onichaan.meherbaka.repository.EmployeeRepository;
-import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,18 +25,15 @@ public class EmployeeService {
         return employeeRepository.findEmployeeByName(name);
     }
 
-    public List<Integer> addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
-        List<Employee> employeesWithId = employeeRepository.findEmployeesById(employee.getId());
-        List<Integer> indexes = new ArrayList<>();
+    public int addEmployee(Employee employee) throws Exception {
         if(employee.getId() == 0){
-            indexes = employeeRepository.addEmployee(employee);
-        } else if (!employeesWithId.isEmpty()) {
-            employeeRepository.deleteEmployee(employee.getId());
-            indexes = employeeRepository.addEmployee(employee);
+            return employeeRepository.addEmployee(employee);
+        } else if (employeeRepository.findEmployeesById(employee.getId()) != -1) {
+            employeeRepository.updateEmployee(employee);
+            return employee.getId();
         }else{
-            throw new SQLException("Enter a valid employee id");
+            throw new Exception("enter a valid employee id");
         }
-        return indexes;
     }
 
     public void deleteEmployee(int id) throws SQLException, IOException, ClassNotFoundException {

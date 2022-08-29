@@ -2,7 +2,7 @@ package arigato.onichaan.meherbaka.controller;
 
 import arigato.onichaan.meherbaka.model.Employee;
 import arigato.onichaan.meherbaka.service.EmployeeService;
-import org.json.simple.parser.ParseException;
+import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,9 +28,15 @@ public class EmployeeController {
 
     //add an employee by taking in json object as input
     @PutMapping(value = "/add")
-    public List<Integer> addEmployee(@RequestBody Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException, ParseException {
+    public JSONObject addEmployee(@RequestBody Employee employee) {
         //System.out.println(employee);
-        return employeeService.addEmployee(employee);
+        JSONObject result = new JSONObject();
+        try{
+            result.put("index altered", employeeService.addEmployee(employee));
+        }catch(Exception e){
+            result.put("ERROR", e.getMessage());
+        }
+        return result;
     }
 
     @GetMapping(value = "/find/{name}")

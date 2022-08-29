@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -67,41 +68,19 @@ public class EmployeeRepository {
     }
 
     //find employeeById
-    public List<Employee> findEmployeesById(int id) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
-        List<Employee> employeesWithId = new ArrayList<>();
+    public int findEmployeesById(int id) throws SQLException, IOException, ClassNotFoundException {
         String query = "Select * FROM employeetable WHERE id = " + id + ";";
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(query);
-        if (!resultSet.wasNull()) {
-            while (resultSet.next()) {
-                Employee employee = new Employee();
-                Class<?> clapp = Employee.class;
-                for (Field field : clapp.getDeclaredFields()) {
-                    field.setAccessible(true);
-                    String searchValue;
-                    if (field.isAnnotationPresent(NameToName.class)) {
-                        searchValue = field.getAnnotation(NameToName.class).value();
-                    } else {
-                        searchValue = field.getName();
-                    }
-                    Class<?> type = field.getType();
-                    if (type.equals(int.class)) {
-                        field.set(employee, resultSet.getInt(searchValue));
-                    } else if (type.equals(double.class)) {
-                        field.set(employee, resultSet.getDouble(searchValue));
-                    } else {
-                        field.set(employee, resultSet.getString(searchValue));
-                    }
-                }
-                employeesWithId.add(employee);
-                System.out.println(employee);
-            }
-
+        int result = -1;
+        if(resultSet.next()){
+            result = resultSet.getInt("id");
         }
         statement.close();
+        resultSet.close();
         connection.close();
-        return employeesWithId;
+        return result;
     }
 
     //find employee By name
@@ -144,7 +123,7 @@ public class EmployeeRepository {
     }
 
     //Add a new employee into the database and get back the employee added
-    public List<Integer> addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+    public int addEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
         //add the employee using insert first
         //INSERT INTO EMPLOYEES (first_name, ...) values (hgdv,sfh,gab);
         PreparedStatement preparedStatement;
@@ -185,7 +164,7 @@ public class EmployeeRepository {
         preparedStatement.close();
         //get the newly entered employee
         //select * from employeetable where first_name = employee.getFirstName();
-        StringBuilder query1 = new StringBuilder().append("SELECT * FROM employeetable WHERE ");
+        StringBuilder query1 = new StringBuilder().append("SELECT id FROM employeetable WHERE ");
         for (Field field : clap.getDeclaredFields()) {
             field.setAccessible(true);
             if (!field.getName().equals("id")) {
@@ -213,12 +192,40 @@ public class EmployeeRepository {
             int id = resultSet.getInt("id");
             intList.add(id);
         }
-
+        int result = Collections.max(intList);
         //closing connections and statements
         statement.close();
         resultSet.close();
         connection.close();
-        return intList;
+        return result;
+    }
+
+    public void updateEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
+        System.out.println(employee);
+        Connection connection = createConnection();
+        StringBuilder query = new StringBuilder().append("UPDATE employeetable SET ");
+        Class<?> clap = Employee.class;
+        for(Field field: clap.getDeclaredFields()){
+            field.setAccessible(true);
+            if(field.isAnnotationPresent(NameToName.class)){
+                query.append(field.getAnnotation(NameToName.class).value()).append(" = ");
+            }else{
+                query.append(field.getName()).append(" = ");
+            }
+            Class<?> type = field.getType();
+            if(type.equals(int.class) || type.equals(double.class) || type.equals(float.class)){
+                query.append(field.get(employee)).append(", ");
+            } else {
+                query.append("'").append(field.get(employee)).append("', ");
+            }
+        }
+        query.delete(query.length()-2, query.length());
+        query.append("WHERE id = ").append(employee.getId());
+        System.out.println(query);
+        PreparedStatement preparedStatement = connection.prepareStatement(query.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+        connection.close();
     }
 
     //delete employee
