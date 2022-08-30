@@ -26,13 +26,24 @@ public class EmployeeService {
     }
 
     public int addEmployee(Employee employee) throws Exception {
-        if(employee.getId() == 0){
+        if (employee.getId() == 0) {
             return employeeRepository.addEmployee(employee);
-        } else if (employeeRepository.findEmployeesById(employee.getId()) != -1) {
+        } else if (employeeRepository.findEmployeesById(employee.getId(), "employeetable") != -1) {
             employeeRepository.updateEmployee(employee);
             return employee.getId();
-        }else{
+        } else {
             throw new Exception("enter a valid employee id");
+        }
+    }
+
+    public int addJsonEmployee(Employee employee) throws Exception {
+        if (employee.getId() == 0) {
+            return employeeRepository.addJsonEmployee(employee);
+        }else if(employeeRepository.findEmployeesById(employee.getId(), "employee") != -1){
+            employeeRepository.updateJsonEmployee(employee);
+            return employee.getId();
+        }else{
+            throw new Exception("enter a valid id");
         }
     }
 

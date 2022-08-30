@@ -68,11 +68,11 @@ public class EmployeeRepository {
     }
 
     //find employeeById
-    public int findEmployeesById(int id) throws SQLException, IOException, ClassNotFoundException {
-        String query = "Select * FROM employeetable WHERE id = " + id + ";";
+    public int findEmployeesById(int id, String table) throws SQLException, IOException, ClassNotFoundException {
+        StringBuilder query = new StringBuilder().append("Select * FROM ").append(table).append("WHERE id = ").append(id);
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery(query);
+        ResultSet resultSet = statement.executeQuery(query.toString());
         int result = -1;
         if(resultSet.next()){
             result = resultSet.getInt("id");
@@ -198,6 +198,40 @@ public class EmployeeRepository {
         resultSet.close();
         connection.close();
         return result;
+    }
+
+    public int addJsonEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException {
+        Connection connection = createConnection();
+        StringBuilder query = new StringBuilder().append("Insert into employee (employee) values ('").append(employee.toJson()).append("');");
+        //System.out.println(query);
+        PreparedStatement preparedStatement = connection.prepareStatement(query.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        StringBuilder query1 = new StringBuilder().append("Select * from employee where employee = '").append(employee.toJson()).append("';");
+        //System.out.println(query1);
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query1.toString());
+        List<Integer> intList = new ArrayList<>();
+        while (resultSet.next()) {
+            int id = resultSet.getInt("id");
+            intList.add(id);
+        }
+        int result = Collections.max(intList);
+        resultSet.close();
+        statement.close();
+        connection.close();
+        return result;
+    }
+
+    public void updateJsonEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException {
+        Connection connection = createConnection();
+        //UPDATE employee SET employee = jsonb_set(employee, {}
+        StringBuilder query = new StringBuilder().append("UPDATE employee SET employee = ");
+        PreparedStatement preparedStatement = connection.prepareStatement(query.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+        connection.close();
     }
 
     public void updateEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
