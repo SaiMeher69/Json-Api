@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\main",
+    "\\src\\main\\java",
+    "\\src\\main\\java\\arigato",
+    "\\src\\main\\java\\arigato\\onichaan",
+    "\\src\\main\\java\\arigato\\onichaan\\meherbaka",
+    "\\src\\main\\java\\arigato\\onichaan\\meherbaka\\controller",
+    "\\src\\main\\java\\arigato\\onichaan\\meherbaka\\repository",
+    "\\src\\main\\java\\arigato\\onichaan\\meherbaka\\service"
+  ],
+  "SelectedNode": "\\src\\main\\java\\arigato\\onichaan\\meherbaka\\MeherBakaApplication.java",
+  "PreviewInSolutionExplorer": false
+}

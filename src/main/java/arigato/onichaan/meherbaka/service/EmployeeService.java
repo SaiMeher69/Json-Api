@@ -36,15 +36,8 @@ public class EmployeeService {
         }
     }
 
-    public int addJsonEmployee(Employee employee) throws Exception {
-        if (employee.getId() == 0) {
-            return employeeRepository.addJsonEmployee(employee);
-        }else if(employeeRepository.findEmployeesById(employee.getId(), "employee") != -1){
-            employeeRepository.updateJsonEmployee(employee);
-            return employee.getId();
-        }else{
-            throw new Exception("enter a valid id");
-        }
+    public int addJsonEmployee(String employee) throws Exception {
+        return employeeRepository.addJsonEmployee(employee);
     }
 
     public void deleteEmployee(int id) throws SQLException, IOException, ClassNotFoundException {
@@ -55,5 +48,7 @@ public class EmployeeService {
         employeeRepository.deleteAll();
     }
 
-
+    public void makeCSV() throws SQLException, IOException, ClassNotFoundException {
+        employeeRepository.makeCsv();
+    }
 }

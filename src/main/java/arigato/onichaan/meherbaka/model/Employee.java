@@ -3,7 +3,6 @@ package arigato.onichaan.meherbaka.model;
 import arigato.onichaan.meherbaka.annotations.AutoIncrement;
 import arigato.onichaan.meherbaka.annotations.NameToName;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.json.simple.JSONObject;
 
 public class Employee {
     @AutoIncrement
@@ -30,15 +29,6 @@ public class Employee {
                 ", age=" + age +
                 ", salary=" + salary +
                 '}';
-    }
-    public String toJson(){
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("firstName",firstName);
-        jsonObject.put("lastName",lastName);
-        jsonObject.put("email",email);
-        jsonObject.put("gender",gender);
-        jsonObject.put("salary",salary);
-        return jsonObject.toString();
     }
 
     public int getId() {

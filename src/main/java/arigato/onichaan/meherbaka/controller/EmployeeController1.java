@@ -1,9 +1,11 @@
 package arigato.onichaan.meherbaka.controller;
 
-import arigato.onichaan.meherbaka.model.Employee;
 import arigato.onichaan.meherbaka.service.EmployeeService;
 import org.json.simple.JSONObject;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 @RestController
 @RequestMapping("/json")
@@ -15,8 +17,8 @@ public class EmployeeController1 {
         this.employeeService = employeeService;
     }
 
-    @PutMapping("/add")
-    public JSONObject addEmployee(@RequestBody Employee employee){
+    @PutMapping(value = "/add", consumes = "text/plain")
+    public JSONObject addEmployee(@RequestBody String employee){
         JSONObject result = new JSONObject();
         try{
             result.put("index altered", employeeService.addJsonEmployee(employee));
@@ -24,5 +26,10 @@ public class EmployeeController1 {
             result.put("error", e.getMessage());
         }
         return result;
+    }
+
+    @GetMapping("/csv")
+    public void makeCSV() throws SQLException, IOException, ClassNotFoundException {
+        employeeService.makeCSV();
     }
 }

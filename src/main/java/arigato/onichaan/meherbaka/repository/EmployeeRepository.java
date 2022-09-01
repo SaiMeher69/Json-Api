@@ -3,16 +3,16 @@ package arigato.onichaan.meherbaka.repository;
 import arigato.onichaan.meherbaka.annotations.AutoIncrement;
 import arigato.onichaan.meherbaka.annotations.NameToName;
 import arigato.onichaan.meherbaka.model.Employee;
+import com.opencsv.CSVWriter;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Repository;
 
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 @Repository
 public class EmployeeRepository {
@@ -200,16 +200,16 @@ public class EmployeeRepository {
         return result;
     }
 
-    public int addJsonEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException {
+    public int addJsonEmployee(String employee) throws SQLException, IOException, ClassNotFoundException {
         Connection connection = createConnection();
-        StringBuilder query = new StringBuilder().append("Insert into employee (employee) values ('").append(employee.toJson()).append("');");
+        StringBuilder query = new StringBuilder().append("Insert into employee (employee) values ('").append(employee).append("');");
         //System.out.println(query);
         PreparedStatement preparedStatement = connection.prepareStatement(query.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
-        StringBuilder query1 = new StringBuilder().append("Select * from employee where employee = '").append(employee.toJson()).append("';");
-        //System.out.println(query1);
+        StringBuilder query1 = new StringBuilder().append("Select * from employee where employee = '").append(employee).append("';");
+        System.out.println(query1);
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(query1.toString());
         List<Integer> intList = new ArrayList<>();
@@ -222,16 +222,6 @@ public class EmployeeRepository {
         statement.close();
         connection.close();
         return result;
-    }
-
-    public void updateJsonEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException {
-        Connection connection = createConnection();
-        //UPDATE employee SET employee = jsonb_set(employee, {}
-        StringBuilder query = new StringBuilder().append("UPDATE employee SET employee = ");
-        PreparedStatement preparedStatement = connection.prepareStatement(query.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-        connection.close();
     }
 
     public void updateEmployee(Employee employee) throws SQLException, IOException, ClassNotFoundException, IllegalAccessException {
@@ -283,5 +273,44 @@ public class EmployeeRepository {
         preparedStatement.executeUpdate();
         preparedStatement.close();
         connection.close();
+    }
+
+    //write into a CSV file
+    public void makeCsv() throws SQLException, IOException, ClassNotFoundException {
+        try (Connection connection = createConnection();Statement statement = connection.createStatement();CSVWriter writer = new CSVWriter(new FileWriter("src/main/resources/employeeData.csv"))) {
+            Map<Integer, JSONObject> data = new HashMap<>();
+            String query = "Select * from employee";
+            ResultSet resultSet = statement.executeQuery(query);
+            List<String> keys = new ArrayList<>();
+            while(resultSet.next()){
+                JSONParser parser = new JSONParser();
+                JSONObject jsonObject = (JSONObject) parser.parse(resultSet.getString("employee"));
+                data.put(resultSet.getInt("id"), jsonObject);
+                for(Object key: jsonObject.keySet()){
+                    if(!keys.contains((String) key)){
+                        keys.add((String) key);
+                    }
+                }
+            }
+            System.out.println(keys);
+            //writing the headers into the csv file
+            String[] header = keys.toArray(new String[0]);
+            writer.writeNext(header);
+            data.forEach((k,v)->writer.writeNext(makeCsvEntry(v,keys)));
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String[] makeCsvEntry(JSONObject jsonObject, List<String> keys){
+        List<String> values = new ArrayList<>();
+        for(String key: keys){
+            if(jsonObject.containsKey(key)){
+                values.add(String.valueOf(jsonObject.get(key)));
+            }else{
+                values.add("null");
+            }
+        }
+        return values.toArray(new String[0]);
     }
 }
