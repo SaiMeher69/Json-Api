@@ -281,20 +281,18 @@ public class EmployeeRepository {
             Map<Integer, JSONObject> data = new HashMap<>();
             String query = "Select * from employee";
             ResultSet resultSet = statement.executeQuery(query);
-            List<String> keys = new ArrayList<>();
+            Set<String> keys = new TreeSet<>();
             while(resultSet.next()){
                 JSONParser parser = new JSONParser();
                 JSONObject jsonObject = (JSONObject) parser.parse(resultSet.getString("employee"));
                 data.put(resultSet.getInt("id"), jsonObject);
                 for(Object key: jsonObject.keySet()){
-                    if(!keys.contains((String) key)){
-                        keys.add((String) key);
-                    }
+                    keys.add((String) key);
                 }
             }
             System.out.println(keys);
             //writing the headers into the csv file
-            String[] header = keys.toArray(new String[0]);
+            String[] header = keys.toArray(new String[]{});
             writer.writeNext(header);
             data.forEach((k,v)->writer.writeNext(makeCsvEntry(v,keys)));
         } catch (ParseException e) {
@@ -302,15 +300,15 @@ public class EmployeeRepository {
         }
     }
 
-    public String[] makeCsvEntry(JSONObject jsonObject, List<String> keys){
-        List<String> values = new ArrayList<>();
+    public String[] makeCsvEntry(JSONObject jsonObject, Set<String> keys){
+        List<String> values = new LinkedList<>();
         for(String key: keys){
             if(jsonObject.containsKey(key)){
                 values.add(String.valueOf(jsonObject.get(key)));
             }else{
-                values.add("null");
+                values.add("");
             }
         }
-        return values.toArray(new String[0]);
+        return values.toArray(new String[]{});
     }
 }
